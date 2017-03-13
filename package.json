@@ -38,7 +38,6 @@
     "idb-pull-blob-store": "~0.5.1",
     "interface-pull-blob-store": "~0.6.0",
     "lodash": "^4.17.4",
-    "multihashes": "~0.4.0",
     "ncp": "^2.0.0",
     "pre-commit": "^1.2.2",
     "rimraf": "^2.5.4"
@@ -48,7 +47,7 @@
     "base32.js": "^0.1.0",
     "ipfs-block": "~0.5.5",
     "lock": "^0.1.3",
-    "multihashes": "~0.3.3",
+    "multihashes": "~0.4.0",
     "pull-defer": "^0.2.2",
     "pull-stream": "^3.5.0",
     "pull-write": "^1.1.1",

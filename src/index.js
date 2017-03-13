@@ -1,56 +1,52 @@
 'use strict'
 
+const MountStore = require('datstore-core').MountDatastore
+const Key = require('interface-datastore').Key
+const LevelStore = require('datastore-level')
 const assert = require('assert')
 
-const stores = require('./stores')
+const version = require('./version')
+const config = require('./config')
+const blockstore = require('./blockstore')
 
-module.exports = class Repo {
+/**
+ * IpfsRepo implements all required functionality to read and write to an ipfs repo.
+ *
+ */
+class IpfsRepo {
+  /**
+   * @param {string} repoPath - path where the repo is stored
+   * @param {object} options
+   */
   constructor (repoPath, options) {
     assert.equal(typeof repoPath, 'string', 'missing repoPath')
     assert(options, 'missing options')
-    assert(options.stores, 'missing options.stores')
 
-    this.path = repoPath
+    this.store = new MountStore([{
+      prefix: new Key('/'),
+      datstore: new options.fs(repoPath)
+    },{
+      prefix: new Key('/datastore'),
+      datastore: new LevelStore(path.join(repoPath, 'datastore'), {db: options.level})
+    }, {
+      prefix: new Key('/blocks'),
+      datastore: new options.fs(path.join(repoPath, 'blocks'))
+    }])
 
-    const blobStores = initializeBlobStores(options.stores)
-
-    const setup = (name, needs) => {
-      needs = needs || {}
-      const args = [repoPath, blobStores[name]]
-      if (needs.locks) {
-        args.push(this.locks)
-      }
-
-      if (needs.config) {
-        args.push(this.config)
-      }
-
-      return stores[name].setUp.apply(stores[name], args)
-    }
-
-    this.locks = setup('locks')
-    this.version = setup('version', {locks: true})
-    this.config = setup('config', {locks: true})
-    this.keys = setup('keys', {locks: true, config: true})
-    this.blockstore = setup('blockstore', {locks: true})
+    this.version = version(this)
+    this.config = config(this)
+    this.blockstore = blockstore(this)
   }
 
+  /**
+   * Check if a repo exists.
+   *
+   * @param {function(Error, bool)} callback
+   * @returns {void}
+   */
   exists (callback) {
     this.version.exists(callback)
   }
 }
 
-function initializeBlobStores (store) {
-  if (store.constructor) {
-    return {
-      keys: store,
-      config: store,
-      blockstore: store,
-      logs: store,
-      locks: store,
-      version: store
-    }
-  }
-
-  return store
-}
+module.exports = IpfsRepo
