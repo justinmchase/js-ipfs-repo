@@ -1,13 +1,27 @@
 'use strict'
 
-const MountStore = require('datstore-core').MountDatastore
+const core = require('datastore-core')
+const MountStore = core.MountDatastore
+const ShardingStore = core.ShardingDatastore
+
 const Key = require('interface-datastore').Key
 const LevelStore = require('datastore-level')
+const setImmediate = require('async/setImmediate')
+const waterfall = require('async/waterfall')
+const series = require('async/series')
+const Multiaddr = require('multiaddr')
+const Buffer = require('safe-buffer').Buffer
 const assert = require('assert')
+const path = require('path')
 
 const version = require('./version')
 const config = require('./config')
 const blockstore = require('./blockstore')
+const lock = require('./lock')
+
+const apiFile = new Key('api')
+const flatfsDirectory = 'blocks'
+const levelDirectory = 'datastore'
 
 /**
  * IpfsRepo implements all required functionality to read and write to an ipfs repo.
@@ -22,20 +36,102 @@ class IpfsRepo {
     assert.equal(typeof repoPath, 'string', 'missing repoPath')
     assert(options, 'missing options')
 
-    this.store = new MountStore([{
-      prefix: new Key('/'),
-      datstore: new options.fs(repoPath)
-    },{
-      prefix: new Key('/datastore'),
-      datastore: new LevelStore(path.join(repoPath, 'datastore'), {db: options.level})
-    }, {
-      prefix: new Key('/blocks'),
-      datastore: new options.fs(path.join(repoPath, 'blocks'))
-    }])
+    this.closed = true
+    this.path = repoPath
+    this.options = options
+  }
 
-    this.version = version(this)
-    this.config = config(this)
-    this.blockstore = blockstore(this)
+  /**
+   * Open the repo. If the repo is already open no action will be taken.
+   * If the repo is not initialized it will return an error.
+   *
+   * @param {function(Error)} callback
+   * @returns {void}
+   */
+  open (callback) {
+    if (!this.closed) {
+      return setImmediate(callback)
+    }
+
+    const FsStore = this.options.fs
+    this.fsStore = new FsStore(this.path)
+
+    this.version = version(this.fsStore)
+    this.config = config(this.fsStore)
+
+    // check if the repo is already initialized
+    waterfall([
+      (cb) => this._isInitialized(cb),
+      (cb) => lock.lock(cb),
+      (lck, cb) => {
+        this.lockfile = lck
+        this.version.check(cb)
+      },
+      (cb) => ShardingStore.createOrOpen(new FsStore(path.join(this.path, flatfsDirectory)), cb),
+
+      (flatfs, cb) => {
+        const level = new LevelStore(path.join(this.path, levelDirectory), {db: this.options.level})
+
+        this.store = new MountStore([{
+          prefix: new Key('/'),
+          datstore: level
+        }, {
+          prefix: new Key(flatfsDirectory),
+          datastore: flatfs
+        }])
+
+        this.blockstore = blockstore(this)
+        this.closed = false
+        cb()
+      }
+    ], (err) => {
+      if (err && this.lockfile) {
+        return this.lockfile.close(() => callback(err))
+      }
+      callback(err)
+    })
+  }
+
+  /**
+   * Check if the repo is already initialized.
+   *
+   * @private
+   * @param {function(Error)} callback
+   * @returns {void}
+   */
+  _isInitialized (callback) {
+    this.config.exists((err, exists) => {
+      if (err) {
+        return callback(err)
+      }
+
+      if (!exists) {
+        return callback(new Error('repo is not initialized yet'))
+      }
+      callback()
+    })
+  }
+
+  /**
+   * Close the repo and cleanup.
+   *
+   * @param {function(Error)} callback
+   * @returns {void}
+   */
+  close (callback) {
+    if (this.closed) {
+      return callback(new Error('repo is already closed'))
+    }
+
+    series([
+      (cb) => this.fsStore.delete(apiFile, cb),
+      (cb) => this.store.close(cb),
+      (cb) => this.fsStore.close(cb),
+      (cb) => {
+        this.closed = true
+        this.lockfile.close(cb)
+      }
+    ], callback)
   }
 
   /**
@@ -46,6 +142,48 @@ class IpfsRepo {
    */
   exists (callback) {
     this.version.exists(callback)
+  }
+
+  /**
+   * Get the private key from the config.
+   *
+   * @param {function(Error, string)} callback
+   * @returns {void}
+   */
+  getPrivateKey (callback) {
+    this.config.get((err, config) => {
+      if (err) {
+        return callback(err)
+      }
+      callback(null, config.Identity.PrivKey)
+    })
+  }
+
+  /**
+   * Set the api address, by writing it to the `/api` file.
+   *
+   * @param {Multiaddr} addr
+   * @param {function(Error)} callback
+   * @returns {void}
+   */
+  setApiAddress (addr, callback) {
+    this.fsStore.put(apiFile, Buffer.from(addr.toString()), callback)
+  }
+
+  /**
+   * Returns the registered API address, according to the `/api` file in this respo.
+   *
+   * @param {function(Error, Mulitaddr)} callback
+   * @returns {void}
+   */
+  apiAddress (callback) {
+    this.fsStore.get(apiFile, (err, rawAddr) => {
+      if (err) {
+        return callback(err)
+      }
+
+      callback(null, new Multiaddr(rawAddr.toString()))
+    })
   }
 }
 

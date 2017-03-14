@@ -14,12 +14,6 @@ module.exports = (repo) => {
           () => new Repo()
         ).to.throw(Error)
       })
-
-      it('bad repo init 2', () => {
-        expect(
-          () => new Repo('', {})
-        ).to.throw(Error)
-      })
     })
 
     it('check if Repo exists', (done) => {
@@ -34,36 +28,11 @@ module.exports = (repo) => {
       expect(repo.path).to.be.a('string')
     })
 
-    describe('locks', () => {
-      it('lock, unlock', (done) => {
-        series([
-          (cb) => repo.locks.lock(cb),
-          (cb) => repo.locks.unlock(cb)
-        ], done)
-      })
-
-      it('lock, lock', (done) => {
-        series([
-          (cb) => repo.locks.lock(cb),
-          (cb) => repo.locks.lock(cb),
-          (cb) => repo.locks.unlock(cb)
-        ], done)
-
-        setTimeout(() => {
-          repo.locks.unlock((err) => {
-            expect(err).to.not.exist
-          })
-        }, 500)
-      })
-    })
-
-    describe('keys', () => {
-      it('get PrivKey', (done) => {
-        repo.keys.get((err, privKey) => {
-          expect(err).to.not.exist
-          expect(privKey).to.be.a('string')
-          done()
-        })
+    it('getPrivateKey', (done) => {
+      repo.getPrivateKey((err, privKey) => {
+        expect(err).to.not.exist
+        expect(privKey).to.be.a('string')
+        done()
       })
     })
 
@@ -110,8 +79,6 @@ module.exports = (repo) => {
       })
     })
 
-    require('./blockstore-test')(repo)
-
-    describe('datastore', () => {})
+    // require('./blockstore-test')(repo)
   })
 }

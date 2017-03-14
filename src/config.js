@@ -1,11 +1,10 @@
 'use strict'
 
 const Key = require('interface-datastore').Key
-const assert = require('assert')
 
 const configKey = new Key('config')
 
-module.exports = (repo) => {
+module.exports = (store) => {
   return {
     /**
      * Get the current configuration from the repo.
@@ -14,7 +13,7 @@ module.exports = (repo) => {
      * @returns {void}
      */
     get (callback) {
-      repo.store.get(configKey, (err, value) => {
+      store.get(configKey, (err, value) => {
         if (err) {
           return callback(err)
         }
@@ -38,7 +37,16 @@ module.exports = (repo) => {
     set (config, callback) {
       const buf = new Buffer(JSON.stringify(config, null, 2))
 
-      repo.store.put(configKey, buf, callback)
+      store.put(configKey, buf, callback)
+    },
+    /**
+     * Check if a config file exists.
+     *
+     * @param {function(Error, bool)} callback
+     * @returns {void}
+     */
+    exists (callback) {
+      store.has(configKey, callback)
     }
   }
 }

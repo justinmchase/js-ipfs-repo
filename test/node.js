@@ -6,7 +6,6 @@ const expect = require('chai').expect
 const ncp = require('ncp').ncp
 const rimraf = require('rimraf')
 const path = require('path')
-const Store = require('fs-pull-blob-store')
 
 const IPFSRepo = require('../src')
 
@@ -15,10 +14,21 @@ describe('IPFS Repo Tests on on Node.js', () => {
   const date = Date.now().toString()
   const repoPath = testRepoPath + '-for-' + date
 
+  let repo
+
   before((done) => {
+    console.log('repoPath: %s', repoPath)
+    repo = new IPFSRepo(repoPath, {
+      fs: require('datastore-fs'),
+      level: require('leveldown')
+    })
     ncp(testRepoPath, repoPath, (err) => {
       expect(err).to.not.exist
-      done()
+
+      repo.open((err) => {
+        expect(err).to.not.exist
+        done()
+      })
     })
   })
 
@@ -28,7 +38,5 @@ describe('IPFS Repo Tests on on Node.js', () => {
       done()
     })
   })
-
-  const repo = new IPFSRepo(repoPath, {stores: Store})
   require('./repo-test')(repo)
 })

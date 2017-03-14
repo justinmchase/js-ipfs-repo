@@ -3,6 +3,8 @@
 const NamespaceStore = require('datastore-core').NamespaceDatastore
 const Key = require('interface-datastore').Key
 const multibase = require('multibase')
+const Block = require('ipfs-block')
+const each = require('async/each')
 
 const blockPrefix = new Key('blocks')
 
@@ -42,7 +44,7 @@ module.exports = (repo) => {
           return callback(err)
         }
 
-        callback(null, new Block(data, cid))
+        callback(null, new Block(blockData))
       })
     },
     put (block, callback) {
@@ -69,7 +71,8 @@ module.exports = (repo) => {
     putMany (blocks, callback) {
       const keys = blocks.map((b) => cidToDsKey(b.cid))
       const batch = store.batch()
-      each(keys, (k, i) => {
+      let i = 0
+      each(keys, (k, cb) => {
         store.has(k, (err, exists) => {
           if (err) {
             return cb(err)
@@ -77,7 +80,7 @@ module.exports = (repo) => {
           if (exists) {
             return cb()
           }
-          batch.put(k, blocks[i].data)
+          batch.put(k, blocks[i++].data)
         })
       }, (err) => {
         if (err) {
