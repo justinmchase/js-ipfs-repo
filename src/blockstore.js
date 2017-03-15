@@ -5,6 +5,8 @@ const Key = require('interface-datastore').Key
 const multibase = require('multibase')
 const Block = require('ipfs-block')
 const each = require('async/each')
+const setImmediate = require('async/setImmediate')
+const CID = require('cids')
 
 const blockPrefix = new Key('blocks')
 
@@ -13,7 +15,7 @@ const blockPrefix = new Key('blocks')
  * @returns {Key}
  */
 const keyFromBuffer = (rawKey) => {
-  const mbase = multibase.encode(multibase.base32, rawKey)
+  const mbase = multibase.encode('base32', rawKey)
   return new Key('/' + mbase.slice(1), false)
 }
 
@@ -38,16 +40,28 @@ module.exports = (repo) => {
      * @returns {void}
      */
     get (cid, callback) {
+      if (!CID.isCID(cid)) {
+        return setImmediate(() => {
+          callback(new Error('Not a valid cid'))
+        })
+      }
+
       const k = cidToDsKey(cid)
       store.get(k, (err, blockData) => {
         if (err) {
           return callback(err)
         }
 
-        callback(null, new Block(blockData))
+        callback(null, new Block(blockData, cid))
       })
     },
     put (block, callback) {
+      if (!Block.isBlock(block)) {
+        return setImmediate(() => {
+          callback(new Error('invalid block'))
+        })
+      }
+
       const k = cidToDsKey(block.cid)
 
       store.has(k, (err, exists) => {
@@ -97,6 +111,12 @@ module.exports = (repo) => {
      * @returns {void}
      */
     has (cid, callback) {
+      if (!CID.isCID(cid)) {
+        return setImmediate(() => {
+          callback(new Error('Not a valid cid'))
+        })
+      }
+
       store.has(cidToDsKey(cid), callback)
     },
     /**
@@ -107,6 +127,12 @@ module.exports = (repo) => {
      * @returns {void}
      */
     delete (cid, callback) {
+      if (!CID.isCID(cid)) {
+        return setImmediate(() => {
+          callback(new Error('Not a valid cid'))
+        })
+      }
+
       store.delete(cidToDsKey(cid), callback)
     }
   }

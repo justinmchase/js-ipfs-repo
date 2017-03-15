@@ -1580,6 +1580,14 @@ chownr@^1.0.1:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/chownr/-/chownr-1.0.1.tgz#e2a75042a9551908bebd25b8523d5f9769d79181"
 
+cids@^0.4.1:
+  version "0.4.1"
+  resolved "https://registry.yarnpkg.com/cids/-/cids-0.4.1.tgz#fefac1c0af4579e99ffb1caf6619abc1145ff98a"
+  dependencies:
+    multibase "~0.3.1"
+    multicodec "~0.1.5"
+    multihashes "~0.3.3"
+
 cipher-base@^1.0.0, cipher-base@^1.0.1:
   version "1.0.3"
   resolved "https://registry.yarnpkg.com/cipher-base/-/cipher-base-1.0.3.tgz#eeabf194419ce900da3018c207d212f2a6df0a07"
@@ -5276,11 +5284,23 @@ multiaddr@^2.2.1:
     varint "^5.0.0"
     xtend "^4.0.1"
 
-multibase@^0.3.2:
+multibase@^0.3.2, multibase@~0.3.1:
   version "0.3.2"
   resolved "https://registry.yarnpkg.com/multibase/-/multibase-0.3.2.tgz#f3cf79d86aa8364432d6691dbd8c0cdf12ede66a"
   dependencies:
     base-x "3.0.0"
+
+multicodec@~0.1.5:
+  version "0.1.6"
+  resolved "https://registry.yarnpkg.com/multicodec/-/multicodec-0.1.6.tgz#ba3edf27748126002ac469130a919ab577d3540f"
+  dependencies:
+    varint "^5.0.0"
+
+multihashes@~0.3.3:
+  version "0.3.3"
+  resolved "https://registry.yarnpkg.com/multihashes/-/multihashes-0.3.3.tgz#18d74d8c2393af39aaf0ac8f4fd6d888d43f2f29"
+  dependencies:
+    bs58 "^4.0.0"
 
 multihashes@~0.4.0, multihashes@~0.4.3:
   version "0.4.3"

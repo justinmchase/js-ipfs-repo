@@ -37,6 +37,7 @@
     "aegir": "^10.0.0",
     "buffer-loader": "^0.0.1",
     "chai": "^3.5.0",
+    "cids": "^0.4.1",
     "datastore-fs": "^0.1.0",
     "interface-pull-blob-store": "~0.6.0",
     "leveldown": "^1.6.0",

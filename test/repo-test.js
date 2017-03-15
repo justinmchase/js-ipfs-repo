@@ -78,6 +78,6 @@ module.exports = (repo) => {
       })
     })
 
-    // require('./blockstore-test')(repo)
+    require('./blockstore-test')(repo)
   })
 }

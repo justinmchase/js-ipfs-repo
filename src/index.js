@@ -81,13 +81,13 @@ class IpfsRepo {
       (flatfs, cb) => {
         log('Flatfs store opened')
         this.store = new MountStore([{
+          prefix: new Key(flatfsDirectory),
+          datastore: flatfs
+        }, {
           prefix: new Key('/'),
           datastore: new LevelStore(path.join(this.path, levelDirectory), {
             db: this.options.level
           })
-        }, {
-          prefix: new Key(flatfsDirectory),
-          datastore: flatfs
         }])
 
         this.blockstore = blockstore(this)
