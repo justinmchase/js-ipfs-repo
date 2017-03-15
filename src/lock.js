@@ -1,6 +1,6 @@
 'use strict'
 
-const lockMe = require('lock-me')
+const Lock = require('lock-me')
 const path = require('path')
 const debug = require('debug')
 const fs = require('fs')
@@ -8,6 +8,7 @@ const fs = require('fs')
 const log = debug('repo:lock')
 
 const lockFile = 'repo.lock'
+const lock = new Lock()
 
 /**
  * Lock the repo in the given dir.
@@ -19,7 +20,7 @@ const lockFile = 'repo.lock'
 exports.lock = (dir, callback) => {
   const file = path.join(dir, lockFile)
   log('locking %s', file)
-  lockMe.lock(file, callback)
+  lock(file, callback)
 }
 
 /**
@@ -37,7 +38,7 @@ exports.locked = (dir, callback) => {
     log('file does not exist: %s', file)
   }
 
-  lockMe.lock(file, (err, lck) => {
+  lock(file, (err, lck) => {
     if (err) {
       log('already locked: %s', err.message)
       return callback(null, true)

@@ -2,10 +2,10 @@
 
 'use strict'
 
-const expect = require('chai').expect
 const ncp = require('ncp').ncp
 const rimraf = require('rimraf')
 const path = require('path')
+const series = require('async/series')
 
 const IPFSRepo = require('../src')
 
@@ -14,29 +14,24 @@ describe('IPFS Repo Tests on on Node.js', () => {
   const date = Date.now().toString()
   const repoPath = testRepoPath + '-for-' + date
 
-  let repo
+  const repo = new IPFSRepo(repoPath, {
+    fs: require('datastore-fs'),
+    level: require('leveldown')
+  })
 
   before((done) => {
-    console.log('repoPath: %s', repoPath)
-    repo = new IPFSRepo(repoPath, {
-      fs: require('datastore-fs'),
-      level: require('leveldown')
-    })
-    ncp(testRepoPath, repoPath, (err) => {
-      expect(err).to.not.exist
-
-      repo.open((err) => {
-        expect(err).to.not.exist
-        done()
-      })
-    })
+    series([
+      (cb) => ncp(testRepoPath, repoPath, cb),
+      (cb) => repo.open(cb)
+    ], done)
   })
 
   after((done) => {
-    rimraf(repoPath, (err) => {
-      expect(err).to.not.exist
-      done()
-    })
+    series([
+      (cb) => repo.close(cb),
+      (cb) => rimraf(repoPath, cb)
+    ], done)
   })
+
   require('./repo-test')(repo)
 })

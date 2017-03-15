@@ -1,6 +1,8 @@
 'use strict'
 
 const Key = require('interface-datastore').Key
+const debug = require('debug')
+const log = debug('repo:version')
 
 const versionKey = new Key('version')
 const repoVersion = 5
@@ -46,10 +48,12 @@ module.exports = (store) => {
      * @returns {void}
      */
     check (callback) {
+      log('checking version')
       this.get((err, version) => {
         if (err) {
           return callback(err)
         }
+        log('comparing version: %s and %s', version, repoVersion)
         if (version !== repoVersion) {
           return callback(new Error(`version mismatch: expected v${repoVersion}, found v${version}`))
         }

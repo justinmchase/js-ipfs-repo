@@ -13,11 +13,14 @@ const Multiaddr = require('multiaddr')
 const Buffer = require('safe-buffer').Buffer
 const assert = require('assert')
 const path = require('path')
+const debug = require('debug')
 
 const version = require('./version')
 const config = require('./config')
 const blockstore = require('./blockstore')
 const lock = require('./lock')
+
+const log = debug('repo')
 
 const apiFile = new Key('api')
 const flatfsDirectory = 'blocks'
@@ -52,9 +55,10 @@ class IpfsRepo {
     if (!this.closed) {
       return setImmediate(callback)
     }
+    log('opening at %s', this.path)
 
     const FsStore = this.options.fs
-    this.fsStore = new FsStore(this.path)
+    this.fsStore = new FsStore(this.path, {extension: ''})
 
     this.version = version(this.fsStore)
     this.config = config(this.fsStore)
@@ -62,19 +66,25 @@ class IpfsRepo {
     // check if the repo is already initialized
     waterfall([
       (cb) => this._isInitialized(cb),
-      (cb) => lock.lock(cb),
+      (cb) => lock.lock(this.path, cb),
       (lck, cb) => {
+        log('aquired repo.lock')
         this.lockfile = lck
         this.version.check(cb)
       },
-      (cb) => ShardingStore.createOrOpen(new FsStore(path.join(this.path, flatfsDirectory)), cb),
-
+      (cb) => {
+        log('creating flatfs')
+        const s = new FsStore(path.join(this.path, flatfsDirectory))
+        const shard = new core.shard.NextToLast(2)
+        ShardingStore.createOrOpen(s, shard, cb)
+      },
       (flatfs, cb) => {
-        const level = new LevelStore(path.join(this.path, levelDirectory), {db: this.options.level})
-
+        log('Flatfs store opened')
         this.store = new MountStore([{
           prefix: new Key('/'),
-          datstore: level
+          datastore: new LevelStore(path.join(this.path, levelDirectory), {
+            db: this.options.level
+          })
         }, {
           prefix: new Key(flatfsDirectory),
           datastore: flatfs
@@ -86,8 +96,12 @@ class IpfsRepo {
       }
     ], (err) => {
       if (err && this.lockfile) {
-        return this.lockfile.close(() => callback(err))
+        return this.lockfile.close((err2) => {
+          log('error removing lock', err2)
+          callback(err)
+        })
       }
+
       callback(err)
     })
   }
@@ -123,8 +137,14 @@ class IpfsRepo {
       return callback(new Error('repo is already closed'))
     }
 
+    log('closing at: %s', this.path)
     series([
-      (cb) => this.fsStore.delete(apiFile, cb),
+      (cb) => this.fsStore.delete(apiFile, (err) => {
+        if (err && err.message.startsWith('ENOENT')) {
+          return cb()
+        }
+        cb(err)
+      }),
       (cb) => this.store.close(cb),
       (cb) => this.fsStore.close(cb),
       (cb) => {

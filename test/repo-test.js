@@ -61,18 +61,17 @@ module.exports = (repo) => {
       it('get version', (done) => {
         repo.version.get((err, version) => {
           expect(err).to.not.exist
-          expect(version).to.be.a('string')
-          expect(Number(version)).to.be.a('number')
+          expect(version).to.be.eql(5)
           done()
         })
       })
 
       it('set version', (done) => {
-        repo.version.set('9000', (err) => {
+        repo.version.set(9000, (err) => {
           expect(err).to.not.exist
           repo.version.get((err, version) => {
             expect(err).to.not.exist
-            expect(version).to.equal('9000')
+            expect(version).to.equal(9000)
             done()
           })
         })
