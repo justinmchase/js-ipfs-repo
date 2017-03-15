@@ -45,6 +45,16 @@ class IpfsRepo {
   }
 
   /**
+   * Initialize a new repo.
+   *
+   * @param {function(Error)} callback
+   */
+  init (callback) {
+    // TODO figure out if this should be here
+    callback()
+  }
+
+  /**
    * Open the repo. If the repo is already open no action will be taken.
    * If the repo is not initialized it will return an error.
    *
@@ -58,7 +68,7 @@ class IpfsRepo {
     log('opening at %s', this.path)
 
     const FsStore = this.options.fs
-    this.fsStore = new FsStore(this.path, {extension: ''})
+    this.fsStore = new FsStore(this.path, this.options.fsOptions)
 
     this.version = version(this.fsStore)
     this.config = config(this.fsStore)

@@ -2,7 +2,7 @@
 
 const NamespaceStore = require('datastore-core').NamespaceDatastore
 const Key = require('interface-datastore').Key
-const multibase = require('multibase')
+const base32 = require('base32.js')
 const Block = require('ipfs-block')
 const each = require('async/each')
 const setImmediate = require('async/setImmediate')
@@ -11,12 +11,14 @@ const CID = require('cids')
 const blockPrefix = new Key('blocks')
 
 /**
+ * Transform a raw buffer to a base32 encoded key.
+ *
  * @param {Buffer} rawKey
  * @returns {Key}
  */
 const keyFromBuffer = (rawKey) => {
-  const mbase = multibase.encode('base32', rawKey)
-  return new Key('/' + mbase.slice(1), false)
+  const enc = new base32.Encoder()
+  return new Key('/' + enc.write(rawKey).finalize(), false)
 }
 
 /**

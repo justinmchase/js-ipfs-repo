@@ -16,6 +16,9 @@ describe('IPFS Repo Tests on on Node.js', () => {
 
   const repo = new IPFSRepo(repoPath, {
     fs: require('datastore-fs'),
+    fsOptions: {
+      extension: ''
+    },
     level: require('leveldown')
   })
 
@@ -34,4 +37,6 @@ describe('IPFS Repo Tests on on Node.js', () => {
   })
 
   require('./repo-test')(repo)
+  require('./blockstore-test')(repo)
+  require('./interop-test')(repo)
 })

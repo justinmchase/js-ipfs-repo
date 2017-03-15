@@ -4,7 +4,7 @@
 const expect = require('chai').expect
 const series = require('async/series')
 
-const Repo = require('../src/index')
+const Repo = require('../src')
 
 module.exports = (repo) => {
   describe('IPFS Repo Tests', () => {
@@ -77,7 +77,5 @@ module.exports = (repo) => {
         })
       })
     })
-
-    require('./blockstore-test')(repo)
   })
 }

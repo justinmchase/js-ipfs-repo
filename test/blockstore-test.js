@@ -5,7 +5,6 @@
 const expect = require('chai').expect
 const Block = require('ipfs-block')
 const CID = require('cids')
-const mh = require('multihashes')
 const parallel = require('async/parallel')
 const waterfall = require('async/waterfall')
 const each = require('async/each')
@@ -44,10 +43,10 @@ module.exports = (repo) => {
 
       it('massive multiwrite', (done) => {
         waterfall([
-          (cb) => map(_.range(50), (i, cb) => {
+          (cb) => map(_.range(100), (i, cb) => {
             multihashing(blockData[i], 'sha2-256', cb)
           }, cb),
-          (hashes, cb) => each(_.range(50), (i, cb) => {
+          (hashes, cb) => each(_.range(100), (i, cb) => {
             const block = new Block(blockData[i], new CID(hashes[i]))
             repo.blockstore.put(block, cb)
           }, cb)
@@ -82,9 +81,10 @@ module.exports = (repo) => {
             },
             (block, cb) => {
               expect(block.data).to.be.eql(blockData[j])
+              cb()
             }
-          ], done)
-        }))
+          ], cb)
+        }), done)
       })
 
       it('returns an error on invalid block', (done) => {
@@ -122,24 +122,6 @@ module.exports = (repo) => {
         ], (err, exists) => {
           expect(err).to.not.exist
           expect(exists).to.equal(false)
-          done()
-        })
-      })
-    })
-
-    describe('interop', () => {
-      it('reads welcome-to-ipfs', (done) => {
-        const welcomeHash = mh.fromHexString(
-          '1220120f6af601d46e10b2d2e11ed71c55d25f3042c22501e41d1246e7a1e9d3d8ec'
-        )
-
-        repo.blockstore.get(new CID(welcomeHash), (err, val) => {
-          expect(err).to.not.exist
-          expect(
-            val.data.toString()
-          ).to.match(
-             /Hello and Welcome to IPFS/
-          )
           done()
         })
       })
