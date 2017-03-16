@@ -8,8 +8,8 @@ const Repo = require('../src')
 
 module.exports = (repo) => {
   describe('IPFS Repo Tests', () => {
-    describe('init', () => {
-      it('bad repo init 1', () => {
+    describe('new', () => {
+      it('missing arguments', () => {
         expect(
           () => new Repo()
         ).to.throw(Error)

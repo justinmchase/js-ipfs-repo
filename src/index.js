@@ -9,6 +9,7 @@ const LevelStore = require('datastore-level')
 const setImmediate = require('async/setImmediate')
 const waterfall = require('async/waterfall')
 const series = require('async/series')
+const parallel = require('async/parallel')
 const Multiaddr = require('multiaddr')
 const Buffer = require('safe-buffer').Buffer
 const assert = require('assert')
@@ -25,6 +26,7 @@ const log = debug('repo')
 const apiFile = new Key('api')
 const flatfsDirectory = 'blocks'
 const levelDirectory = 'datastore'
+const repoVersion = 5
 
 /**
  * IpfsRepo implements all required functionality to read and write to an ipfs repo.
@@ -42,16 +44,27 @@ class IpfsRepo {
     this.closed = true
     this.path = repoPath
     this.options = options
+
+    const FsStore = this.options.fs
+    this._fsStore = new FsStore(this.path, this.options.fsOptions)
+
+    this.version = version(this._fsStore)
+    this.config = config(this._fsStore)
   }
 
   /**
    * Initialize a new repo.
    *
+   * @param {Object} config - config to write into `config`.
    * @param {function(Error)} callback
+   * @returns {void}
    */
-  init (callback) {
-    // TODO figure out if this should be here
-    callback()
+  init (config, callback) {
+    log('initializing at: %s', this.path)
+    series([
+      (cb) => this.config.set(config, cb),
+      (cb) => this.version.set(repoVersion, cb)
+    ], callback)
   }
 
   /**
@@ -65,13 +78,7 @@ class IpfsRepo {
     if (!this.closed) {
       return setImmediate(callback)
     }
-    log('opening at %s', this.path)
-
-    const FsStore = this.options.fs
-    this.fsStore = new FsStore(this.path, this.options.fsOptions)
-
-    this.version = version(this.fsStore)
-    this.config = config(this.fsStore)
+    log('opening at: %s', this.path)
 
     // check if the repo is already initialized
     waterfall([
@@ -80,11 +87,10 @@ class IpfsRepo {
       (lck, cb) => {
         log('aquired repo.lock')
         this.lockfile = lck
-        this.version.check(cb)
-      },
-      (cb) => {
+
         log('creating flatfs')
-        const s = new FsStore(path.join(this.path, flatfsDirectory))
+        const FsStore = this.options.fs
+        const s = new FsStore(path.join(this.path, flatfsDirectory), this.options.fsOptions)
         const shard = new core.shard.NextToLast(2)
         ShardingStore.createOrOpen(s, shard, cb)
       },
@@ -124,12 +130,15 @@ class IpfsRepo {
    * @returns {void}
    */
   _isInitialized (callback) {
-    this.config.exists((err, exists) => {
+    parallel([
+      (cb) => this.config.exists(cb),
+      (cb) => this.version.check(repoVersion, cb)
+    ], (err, res) => {
       if (err) {
         return callback(err)
       }
 
-      if (!exists) {
+      if (!res[0]) {
         return callback(new Error('repo is not initialized yet'))
       }
       callback()
@@ -149,14 +158,14 @@ class IpfsRepo {
 
     log('closing at: %s', this.path)
     series([
-      (cb) => this.fsStore.delete(apiFile, (err) => {
+      (cb) => this._fsStore.delete(apiFile, (err) => {
         if (err && err.message.startsWith('ENOENT')) {
           return cb()
         }
         cb(err)
       }),
       (cb) => this.store.close(cb),
-      (cb) => this.fsStore.close(cb),
+      (cb) => this._fsStore.close(cb),
       (cb) => {
         this.closed = true
         this.lockfile.close(cb)
@@ -197,7 +206,7 @@ class IpfsRepo {
    * @returns {void}
    */
   setApiAddress (addr, callback) {
-    this.fsStore.put(apiFile, Buffer.from(addr.toString()), callback)
+    this._fsStore.put(apiFile, Buffer.from(addr.toString()), callback)
   }
 
   /**
@@ -207,7 +216,7 @@ class IpfsRepo {
    * @returns {void}
    */
   apiAddress (callback) {
-    this.fsStore.get(apiFile, (err, rawAddr) => {
+    this._fsStore.get(apiFile, (err, rawAddr) => {
       if (err) {
         return callback(err)
       }

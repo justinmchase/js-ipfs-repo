@@ -17,7 +17,7 @@ describe('IPFS Repo Tests on the Browser', () => {
 
   before((done) => {
     series([
-      (cb) => repo.init(cb),
+      (cb) => repo.init({Identity: {PrivKey: 'private'}}, cb),
       (cb) => repo.open(cb)
     ], done)
   })

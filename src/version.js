@@ -5,7 +5,6 @@ const debug = require('debug')
 const log = debug('repo:version')
 
 const versionKey = new Key('version')
-const repoVersion = 5
 
 module.exports = (store) => {
   return {
@@ -44,18 +43,18 @@ module.exports = (store) => {
     },
     /**
      * Check the current version, and return an error on missmatch
+     * @param {number} expected
      * @param {function(Error)} callback
      * @returns {void}
      */
-    check (callback) {
-      log('checking version')
+    check (expected, callback) {
       this.get((err, version) => {
         if (err) {
           return callback(err)
         }
-        log('comparing version: %s and %s', version, repoVersion)
-        if (version !== repoVersion) {
-          return callback(new Error(`version mismatch: expected v${repoVersion}, found v${version}`))
+        log('comparing version: %s and %s', version, expected)
+        if (version !== expected) {
+          return callback(new Error(`version mismatch: expected v${expected}, found v${version}`))
         }
         callback()
       })
