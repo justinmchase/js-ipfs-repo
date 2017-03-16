@@ -35,7 +35,11 @@ const repoVersion = 5
 class IpfsRepo {
   /**
    * @param {string} repoPath - path where the repo is stored
-   * @param {object} options
+   * @param {object} options - Configuration
+   * @param {Datastore} options.fs
+   * @param {Leveldown} options.level
+   * @param {object} [options.fsOptions={}]
+   * @param {bool} [options.sharding=true] - Enable sharding (flatfs on disk), not needed in the browser.
    */
   constructor (repoPath, options) {
     assert.equal(typeof repoPath, 'string', 'missing repoPath')
@@ -43,10 +47,15 @@ class IpfsRepo {
 
     this.closed = true
     this.path = repoPath
-    this.options = options
+    this.options = Object.assign({
+      sharding: true
+    }, options)
+    this._fsOptions = Object.assign({}, options.fsOptions)
 
     const FsStore = this.options.fs
-    this._fsStore = new FsStore(this.path, this.options.fsOptions)
+    this._fsStore = new FsStore(this.path, Object.assign({}, this._fsOptions, {
+      extension: ''
+    }))
 
     this.version = version(this._fsStore)
     this.config = config(this._fsStore)
@@ -90,9 +99,14 @@ class IpfsRepo {
 
         log('creating flatfs')
         const FsStore = this.options.fs
-        const s = new FsStore(path.join(this.path, flatfsDirectory), this.options.fsOptions)
-        const shard = new core.shard.NextToLast(2)
-        ShardingStore.createOrOpen(s, shard, cb)
+        const s = new FsStore(path.join(this.path, flatfsDirectory), this._fsOptions)
+
+        if (this.options.sharding) {
+          const shard = new core.shard.NextToLast(2)
+          ShardingStore.createOrOpen(s, shard, cb)
+        } else {
+          cb(null, s)
+        }
       },
       (flatfs, cb) => {
         log('Flatfs store opened')

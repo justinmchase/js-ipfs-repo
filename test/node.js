@@ -17,9 +17,6 @@ describe('IPFS Repo Tests on on Node.js', () => {
   const repoPath = testRepoPath + '-for-' + date
   const repoOpts = {
     fs: require('datastore-fs'),
-    fsOptions: {
-      extension: ''
-    },
     level: require('leveldown')
   }
 
