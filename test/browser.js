@@ -7,14 +7,7 @@ const series = require('async/series')
 const IPFSRepo = require('../src')
 
 describe('IPFS Repo Tests on the Browser', () => {
-  const repo = new IPFSRepo('myrepo', {
-    fs: require('datastore-level'),
-    sharding: false,
-    fsOptions: {
-      db: require('level-js')
-    },
-    level: require('level-js')
-  })
+  const repo = new IPFSRepo('myrepo')
 
   before((done) => {
     series([

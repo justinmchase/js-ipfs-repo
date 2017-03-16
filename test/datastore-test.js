@@ -2,7 +2,9 @@
 /* eslint-env mocha */
 'use strict'
 
-const expect = require('chai').expect
+const chai = require('chai')
+chai.use(require('dirty-chai'))
+const expect = chai.expect
 const parallel = require('async/parallel')
 const waterfall = require('async/waterfall')
 const each = require('async/each')
@@ -37,7 +39,7 @@ module.exports = (repo) => {
     describe('.get', () => {
       it('simple', (done) => {
         repo.store.get(b, (err, val) => {
-          expect(err).to.not.exist
+          expect(err).to.not.exist()
           expect(val).to.be.eql(data)
           done()
         })
@@ -47,7 +49,7 @@ module.exports = (repo) => {
         parallel(_.range(20 * 100).map((i) => (cb) => {
           const j = i % dataList.length
           repo.store.get(new Key('hello' + j), (err, val) => {
-            expect(err).to.not.exist
+            expect(err).to.not.exist()
             expect(val).to.be.eql(dataList[j])
             cb()
           })
@@ -58,7 +60,7 @@ module.exports = (repo) => {
     describe('.has', () => {
       it('existing entry', (done) => {
         repo.store.has(b, (err, exists) => {
-          expect(err).to.not.exist
+          expect(err).to.not.exist()
           expect(exists).to.eql(true)
           done()
         })
@@ -66,7 +68,7 @@ module.exports = (repo) => {
 
       it('non existent block', (done) => {
         repo.store.has(new Key('world'), (err, exists) => {
-          expect(err).to.not.exist
+          expect(err).to.not.exist()
           expect(exists).to.eql(false)
           done()
         })
@@ -79,7 +81,7 @@ module.exports = (repo) => {
           (cb) => repo.store.delete(b, cb),
           (cb) => repo.store.has(b, cb)
         ], (err, exists) => {
-          expect(err).to.not.exist
+          expect(err).to.not.exist()
           expect(exists).to.equal(false)
           done()
         })

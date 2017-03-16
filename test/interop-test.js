@@ -1,7 +1,9 @@
 /* eslint-env mocha */
 'use strict'
 
-const expect = require('chai').expect
+const chai = require('chai')
+chai.use(require('dirty-chai'))
+const expect = chai.expect
 const mh = require('multihashes')
 const CID = require('cids')
 const Key = require('interface-datastore').Key
@@ -14,7 +16,7 @@ module.exports = (repo) => {
       )
 
       repo.blockstore.get(new CID(welcomeHash), (err, val) => {
-        expect(err).to.not.exist
+        expect(err).to.not.exist()
         expect(
           val.data.toString()
         ).to.match(
@@ -26,7 +28,7 @@ module.exports = (repo) => {
 
     it('reads pin set from the datastore', (done) => {
       repo.store.get(new Key('/local/pins'), (err, val) => {
-        expect(err).to.not.exist
+        expect(err).to.not.exist()
         expect(val).to.have.length(34)
         done()
       })

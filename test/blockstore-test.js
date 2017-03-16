@@ -2,7 +2,9 @@
 /* eslint-env mocha */
 'use strict'
 
-const expect = require('chai').expect
+const chai = require('chai')
+chai.use(require('dirty-chai'))
+const expect = chai.expect
 const Block = require('ipfs-block')
 const CID = require('cids')
 const parallel = require('async/parallel')
@@ -55,7 +57,7 @@ module.exports = (repo) => {
 
       it('returns an error on invalid block', (done) => {
         repo.blockstore.put('hello', (err) => {
-          expect(err).to.exist
+          expect(err).to.exist()
           done()
         })
       })
@@ -64,7 +66,7 @@ module.exports = (repo) => {
     describe('.get', () => {
       it('simple', (done) => {
         repo.blockstore.get(b.cid, (err, block) => {
-          expect(err).to.not.exist
+          expect(err).to.not.exist()
           expect(block).to.be.eql(b)
           done()
         })
@@ -89,8 +91,8 @@ module.exports = (repo) => {
 
       it('returns an error on invalid block', (done) => {
         repo.blockstore.get('woot', (err, val) => {
-          expect(err).to.exist
-          expect(val).to.not.exist
+          expect(err).to.exist()
+          expect(val).to.not.exist()
           done()
         })
       })
@@ -99,7 +101,7 @@ module.exports = (repo) => {
     describe('.has', () => {
       it('existing block', (done) => {
         repo.blockstore.has(b.cid, (err, exists) => {
-          expect(err).to.not.exist
+          expect(err).to.not.exist()
           expect(exists).to.eql(true)
           done()
         })
@@ -107,7 +109,7 @@ module.exports = (repo) => {
 
       it('non existent block', (done) => {
         repo.blockstore.has(new CID('woot'), (err, exists) => {
-          expect(err).to.not.exist
+          expect(err).to.not.exist()
           expect(exists).to.eql(false)
           done()
         })
@@ -120,7 +122,7 @@ module.exports = (repo) => {
           (cb) => repo.blockstore.delete(b.cid, cb),
           (cb) => repo.blockstore.has(b.cid, cb)
         ], (err, exists) => {
-          expect(err).to.not.exist
+          expect(err).to.not.exist()
           expect(exists).to.equal(false)
           done()
         })

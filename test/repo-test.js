@@ -1,7 +1,9 @@
 /* eslint-env mocha */
 'use strict'
 
-const expect = require('chai').expect
+const chai = require('chai')
+chai.use(require('dirty-chai'))
+const expect = chai.expect
 const series = require('async/series')
 
 const Repo = require('../src')
@@ -18,7 +20,7 @@ module.exports = (repo) => {
 
     it('check if Repo exists', (done) => {
       repo.exists((err, exists) => {
-        expect(err).to.not.exist
+        expect(err).to.not.exist()
         expect(exists).to.equal(true)
         done()
       })
@@ -30,7 +32,7 @@ module.exports = (repo) => {
 
     it('getPrivateKey', (done) => {
       repo.getPrivateKey((err, privKey) => {
-        expect(err).to.not.exist
+        expect(err).to.not.exist()
         expect(privKey).to.be.a('string')
         done()
       })
@@ -39,7 +41,7 @@ module.exports = (repo) => {
     describe('config', () => {
       it('get config', (done) => {
         repo.config.get((err, config) => {
-          expect(err).to.not.exist
+          expect(err).to.not.exist()
           expect(config).to.be.a('object')
           done()
         })
@@ -60,7 +62,7 @@ module.exports = (repo) => {
     describe('version', () => {
       it('get version', (done) => {
         repo.version.get((err, version) => {
-          expect(err).to.not.exist
+          expect(err).to.not.exist()
           expect(version).to.be.eql(5)
           done()
         })
@@ -68,9 +70,9 @@ module.exports = (repo) => {
 
       it('set version', (done) => {
         repo.version.set(9000, (err) => {
-          expect(err).to.not.exist
+          expect(err).to.not.exist()
           repo.version.get((err, version) => {
-            expect(err).to.not.exist
+            expect(err).to.not.exist()
             expect(version).to.equal(9000)
             done()
           })

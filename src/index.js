@@ -43,7 +43,10 @@ class IpfsRepo {
    */
   constructor (repoPath, options) {
     assert.equal(typeof repoPath, 'string', 'missing repoPath')
-    assert(options, 'missing options')
+
+    if (options == null) {
+      options = require('./default-config')
+    }
 
     this.closed = true
     this.path = repoPath
