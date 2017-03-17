@@ -55,6 +55,32 @@ module.exports = (repo) => {
         ], done)
       })
 
+      it('.putMany', (done) => {
+        waterfall([
+          (cb) => map(_.range(50), (i, cb) => {
+            const d = new Buffer('many' + Math.random())
+            multihashing(d, 'sha2-256', (err, hash) => {
+              if (err) {
+                return cb(err)
+              }
+              cb(null, new Block(d, new CID(hash)))
+            })
+          }, cb),
+          (blocks, cb) => {
+            repo.blockstore.putMany(blocks, (err) => {
+              expect(err).to.not.exist()
+              map(blocks, (b, cb) => {
+                repo.blockstore.has(b.cid, cb)
+              }, (err, res) => {
+                expect(err).to.not.exist()
+                expect(_.every(res, Boolean)).to.be.eql(true)
+                cb()
+              })
+            })
+          }
+        ], done)
+      })
+
       it('returns an error on invalid block', (done) => {
         repo.blockstore.put('hello', (err) => {
           expect(err).to.exist()
