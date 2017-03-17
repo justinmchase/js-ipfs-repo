@@ -18,7 +18,6 @@ const debug = require('debug')
 const version = require('./version')
 const config = require('./config')
 const blockstore = require('./blockstore')
-const lock = require('./lock')
 
 const log = debug('repo')
 
@@ -39,18 +38,20 @@ class IpfsRepo {
    * @param {Leveldown} options.level
    * @param {object} [options.fsOptions={}]
    * @param {bool} [options.sharding=true] - Enable sharding (flatfs on disk), not needed in the browser.
+   * @param {string} [options.lock='fs'] - Either `fs` or `memory`.
    */
   constructor (repoPath, options) {
     assert.equal(typeof repoPath, 'string', 'missing repoPath')
 
     if (options == null) {
-      options = require('./default-config')
+      options = require('./default-options')
     }
 
     this.closed = true
     this.path = repoPath
     this.options = Object.assign({
-      sharding: true
+      sharding: true,
+      lock: 'fs'
     }, options)
     this._fsOptions = Object.assign({}, options.fsOptions)
 
@@ -61,6 +62,14 @@ class IpfsRepo {
 
     this.version = version(this._fsStore)
     this.config = config(this._fsStore)
+
+    if (this.options.lock === 'memory') {
+      this._locker = require('./lock-memory')
+    } else if (this.options.lock === 'fs') {
+      this._locker = require('./lock')
+    } else {
+      throw new Error('Unkown lock options: ' + this.options.lock)
+    }
   }
 
   /**
@@ -94,7 +103,7 @@ class IpfsRepo {
     // check if the repo is already initialized
     waterfall([
       (cb) => this._isInitialized(cb),
-      (cb) => lock.lock(this.path, cb),
+      (cb) => this._locker.lock(this.path, cb),
       (lck, cb) => {
         log('aquired repo.lock')
         this.lockfile = lck

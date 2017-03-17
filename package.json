@@ -4,8 +4,8 @@
   "description": "IPFS Repo implementation",
   "main": "src/index.js",
   "browser": {
-    "./src/lock.js": "./src/lock-browser.js",
-    "./src/default-config.js": "./src/default-config-browser.js"
+    "./src/lock.js": "./src/lock-memory.js",
+    "./src/default-options.js": "./src/default-options-browser.js"
   },
   "scripts": {
     "test": "aegir-test",
@@ -43,6 +43,7 @@
     "chai": "^3.5.0",
     "dirty-chai": "^1.2.2",
     "lodash": "^4.17.4",
+    "memdown": "^1.2.4",
     "multihashes": "~0.4.4",
     "ncp": "^2.0.0",
     "pre-commit": "^1.2.2",

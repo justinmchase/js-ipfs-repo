@@ -7,7 +7,7 @@ const log = debug('repo:lock')
 
 const lockFile = 'repo.lock'
 
-self.IPFS_LOCKS = self.IPFS_LOCKS || {}
+const LOCKS = {}
 
 /**
  * Lock the repo in the given dir.
@@ -19,11 +19,11 @@ self.IPFS_LOCKS = self.IPFS_LOCKS || {}
 exports.lock = (dir, callback) => {
   const file = dir + '/' + lockFile
   log('locking %s', file)
-  self.IPFS_LOCKS[file] = true
+  LOCKS[file] = true
   const closer = {
     close (cb) {
-      if (self.IPFS_LOCKS && self.IPFS_LOCKS[file]) {
-        delete self.IPFS_LOCKS[file]
+      if (LOCKS[file]) {
+        delete LOCKS[file]
       }
       setImmediate(cb)
     }
@@ -44,7 +44,7 @@ exports.locked = (dir, callback) => {
   const file = dir + '/' + lockFile
   log('checking lock: %s')
 
-  const locked = self.IPFS_LOCKS && self.IPFS_LOCKS[file]
+  const locked = LOCKS[file]
   setImmediate(() => {
     callback(null, locked)
   })
