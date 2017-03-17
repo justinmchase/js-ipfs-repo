@@ -4,8 +4,8 @@ const NamespaceStore = require('datastore-core').NamespaceDatastore
 const Key = require('interface-datastore').Key
 const base32 = require('base32.js')
 const Block = require('ipfs-block')
-const each = require('async/each')
 const setImmediate = require('async/setImmediate')
+const reject = require('async/reject')
 const CID = require('cids')
 
 const blockPrefix = new Key('blocks')
@@ -85,23 +85,21 @@ module.exports = (repo) => {
      * @returns {void}
      */
     putMany (blocks, callback) {
-      const keys = blocks.map((b) => cidToDsKey(b.cid))
+      const keys = blocks.map((b) => ({
+        key: cidToDsKey(b.cid),
+        block: b
+      }))
+
       const batch = store.batch()
-      let i = 0
-      each(keys, (k, cb) => {
-        store.has(k, (err, exists) => {
-          if (err) {
-            return cb(err)
-          }
-          if (exists) {
-            return cb()
-          }
-          batch.put(k, blocks[i++].data)
-        })
-      }, (err) => {
+      reject(keys, (k, cb) => store.has(k.key, cb), (err, newKeys) => {
         if (err) {
           return callback(err)
         }
+
+        newKeys.forEach((k) => {
+          batch.put(k.block)
+        })
+
         batch.commit(callback)
       })
     },
