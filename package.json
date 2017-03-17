@@ -35,7 +35,8 @@
   ],
   "homepage": "https://github.com/ipfs/js-ipfs-repo",
   "engines": {
-    "node": ">=4.0.0"
+    "node": ">=4.0.0",
+    "npm": ">=3.0.0"
   },
   "devDependencies": {
     "aegir": "^11.0.0",

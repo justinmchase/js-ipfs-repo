@@ -30,14 +30,6 @@ module.exports = (repo) => {
       expect(repo.path).to.be.a('string')
     })
 
-    it('getPrivateKey', (done) => {
-      repo.getPrivateKey((err, privKey) => {
-        expect(err).to.not.exist()
-        expect(privKey).to.be.a('string')
-        done()
-      })
-    })
-
     describe('config', () => {
       it('get config', (done) => {
         repo.config.get((err, config) => {

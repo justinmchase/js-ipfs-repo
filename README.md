@@ -125,8 +125,8 @@ Example:
 
 ```js
 const Repo = require('ipfs-repo')
-const repo = new Repo('/Users/awesome/.jsipfs')
-repo.init(defaultConfig, (err) => {
+const repo = new Repo('/tmp/ipfs-repo')
+repo.init({cool: 'config'}, (err) => {
   if (err) {
     throw err
   }

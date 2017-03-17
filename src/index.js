@@ -6,7 +6,6 @@ const ShardingStore = core.ShardingDatastore
 
 const Key = require('interface-datastore').Key
 const LevelStore = require('datastore-level')
-const setImmediate = require('async/setImmediate')
 const waterfall = require('async/waterfall')
 const series = require('async/series')
 const parallel = require('async/parallel')
@@ -88,7 +87,7 @@ class IpfsRepo {
    */
   open (callback) {
     if (!this.closed) {
-      return setImmediate(callback)
+      return callback(new Error('repo is already open'))
     }
     log('opening at: %s', this.path)
 
@@ -198,21 +197,6 @@ class IpfsRepo {
    */
   exists (callback) {
     this.version.exists(callback)
-  }
-
-  /**
-   * Get the private key from the config.
-   *
-   * @param {function(Error, string)} callback
-   * @returns {void}
-   */
-  getPrivateKey (callback) {
-    this.config.get((err, config) => {
-      if (err) {
-        return callback(err)
-      }
-      callback(null, config.Identity.PrivKey)
-    })
   }
 
   /**
