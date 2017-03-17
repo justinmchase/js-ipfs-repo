@@ -97,7 +97,7 @@ module.exports = (repo) => {
         }
 
         newKeys.forEach((k) => {
-          batch.put(k.key, k.block)
+          batch.put(k.key, k.block.data)
         })
 
         batch.commit(callback)

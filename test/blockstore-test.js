@@ -70,10 +70,10 @@ module.exports = (repo) => {
             repo.blockstore.putMany(blocks, (err) => {
               expect(err).to.not.exist()
               map(blocks, (b, cb) => {
-                repo.blockstore.has(b.cid, cb)
+                repo.blockstore.get(b.cid, cb)
               }, (err, res) => {
                 expect(err).to.not.exist()
-                expect(_.every(res, Boolean)).to.be.eql(true)
+                expect(res).to.be.eql(blocks)
                 cb()
               })
             })
