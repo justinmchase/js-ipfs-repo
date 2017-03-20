@@ -3,6 +3,7 @@
 const core = require('datastore-core')
 const MountStore = core.MountDatastore
 const ShardingStore = core.ShardingDatastore
+const EventEmitter = require('events').EventEmitter
 
 const Key = require('interface-datastore').Key
 const LevelStore = require('datastore-level')
@@ -30,7 +31,7 @@ const repoVersion = 5
  * IpfsRepo implements all required functionality to read and write to an ipfs repo.
  *
  */
-class IpfsRepo {
+class IpfsRepo extends EventEmitter {
   /**
    * @param {string} repoPath - path where the repo is stored
    * @param {object} options - Configuration
@@ -41,6 +42,7 @@ class IpfsRepo {
    * @param {string} [options.lock='fs'] - Either `fs` or `memory`.
    */
   constructor (repoPath, options) {
+    super()
     assert.equal(typeof repoPath, 'string', 'missing repoPath')
 
     if (options == null) {
@@ -81,10 +83,18 @@ class IpfsRepo {
    */
   init (config, callback) {
     log('initializing at: %s', this.path)
+    this.emit('initializing')
     series([
       (cb) => this.config.set(config, cb),
       (cb) => this.version.set(repoVersion, cb)
-    ], callback)
+    ], (err) => {
+      if (err) {
+        this.emit('error', err)
+        return callback(err)
+      }
+      this.emit('initialized')
+      callback()
+    })
   }
 
   /**
@@ -99,6 +109,16 @@ class IpfsRepo {
       return callback(new Error('repo is already open'))
     }
     log('opening at: %s', this.path)
+    this.emit('opening')
+
+    const done = (err) => {
+      if (err) {
+        this.emit('error', err)
+        return callback(err)
+      }
+      this.emit('open')
+      callback()
+    }
 
     // check if the repo is already initialized
     waterfall([
@@ -136,14 +156,18 @@ class IpfsRepo {
         cb()
       }
     ], (err) => {
+      if (err) {
+        log('error', err)
+        this.emit('error', err)
+      }
       if (err && this.lockfile) {
         return this.lockfile.close((err2) => {
           log('error removing lock', err2)
-          callback(err)
+          done(err)
         })
       }
 
-      callback(err)
+      done(err)
     })
   }
 
@@ -180,7 +204,7 @@ class IpfsRepo {
     if (this.closed) {
       return callback(new Error('repo is already closed'))
     }
-
+    this.emit('closing')
     log('closing at: %s', this.path)
     series([
       (cb) => this._fsStore.delete(apiFile, (err) => {
@@ -195,7 +219,14 @@ class IpfsRepo {
         this.closed = true
         this.lockfile.close(cb)
       }
-    ], callback)
+    ], (err) => {
+      if (err) {
+        this.emit('error', err)
+        return callback(err)
+      }
+      this.emit('closed')
+      callback()
+    })
   }
 
   /**
