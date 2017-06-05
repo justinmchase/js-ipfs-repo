@@ -48,7 +48,8 @@ class IpfsRepo {
     this.path = repoPath
     this.options = Object.assign({ lock: 'memory', sharding: true }, options || defaultOptions)
     const BlockStore = this.options.blockStore
-    this._blockStore = new BlockStore(this.path, this.options.blockStoreOptions)
+    const blockStoreOptions = Object.assign({}, this.options.blockStoreOptions, { extension: '' })
+    this._blockStore = new BlockStore(this.path, blockStoreOptions)
 
     this.version = version(this._blockStore)
     this.config = config(this._blockStore)
@@ -126,7 +127,6 @@ class IpfsRepo {
         log('Flatfs store opened')
         const DataStore = this.options.dataStore
         const dataStore = new DataStore(path.join(this.path, dataStoreDirectory), this.options.dataStoreOptions)
-        log(dataStore)
         this.store = new MountStore([
           {
             prefix: new Key(blockStoreDirectory),
